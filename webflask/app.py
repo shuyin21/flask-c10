@@ -4,6 +4,18 @@ import sqlite3 as sql
 app = Flask(__name__)
 # hompage route
 
+# create a function to handle db connection
+
+
+#  create a function to handle db connection
+
+def musicDbCon():
+    # conn variable = sql.connectFunction(path/filename.ext)
+    conn = sql.connect("Part12 Flask/webflask/c10Sqlite.db")
+    # row_factory  is used to manipulate/access the db
+    conn.row_factory = sql.Row
+    return conn
+
 
 @app.route("/")
 @app.route("/index")
@@ -12,14 +24,70 @@ def index():
 
 
 # set the routes for the songs.html
+# set the routes for the songs.html
+
 @app.route("/songs")
 def songs():
 
-    # returns the songs page in the browser whent the songs text/link is clicked on the menu
-    return render_template("songs.html", title="Songs")
-
-
+    # read song data from the database
+    songConn = musicDbCon()
+    cursor = songConn.cursor()
+    cursor.execute("SELECT * FROM songs")
+    getSongs = cursor.fetchall()
+    # returns the songs page in the browser when the songs text/link is clicked on the menu
+    return render_template("songs.html", title="Songs", songsInDB=getSongs)
 # set the routes for the contact.html
+
+# Delete song by songID
+
+
+@app.route("/<int:songID>/delete", methods=("POST",))
+def delete(songID):
+    songConn = musicDbCon()
+    cursor = songConn.cursor()
+    cursor.execute("DELETE FROM songs WHERE songID =?", (songID,))
+    songConn.commit()
+    songConn.close()
+    return redirect(url_for("songs"))  # redirect to songs page after delete
+
+
+"Create a function to get a specific song"
+
+
+def getSong(recordID):
+    songConn = musicDbCon()
+    cursor = songConn.cursor()
+    #
+    aSong = cursor.execute(
+        "SELECT * FROM songs WHERE songID =?", (recordID,)).fetchone()
+    songConn.close()
+
+    if aSong is None:
+        abort(Response(f"No record {aSong} was found in DB"))
+    return aSong
+
+
+"Update a song"
+
+
+@app.route("/<int:songID>/update", methods=("GET", "POST",))
+def update(songID):
+    aSongRecord = getSong(songID)
+    if request.method == "POST":
+        title = request.form["Title"]
+        artist = request.form["Artist"]
+        genre = request.form["Genre"]
+
+        songConn = musicDbCon()
+        cursor = songConn.cursor()
+        cursor.execute("UPDATE songs SET title = ?, artist = ?, genre = ?" "WHERE songID= ?",
+                       (title, artist, genre, songID),)
+        songConn.commit()
+        songConn.close()
+        # redirect to songs page after delete
+        return redirect(url_for("songs"))
+    return render_template("updatesongs.html", title="Update Songs", SongRecord=aSongRecord)
+
 
 @app.route("/contact")
 def contact():
@@ -41,10 +109,40 @@ def about():
 
 # set the routes for the addsongs.html
 
-@app.route("/addsongs")
+# set the routes for the addsongs.html
+
+@app.route("/addsongs.html", methods=["GET", "POST"])
 def addsongs():
 
-    # returns the addsongs page in the browser when the addsongs text/link is clicked on the menu
+    if request.method == "POST":
+
+        title = request.form["Title"]
+
+        artist = request.form["Artist"]
+
+        genre = request.form["Genre"]
+
+        songConn = musicDbCon()
+
+        cursor = songConn.cursor()
+
+        songID = cursor.lastrowid
+
+        cursor.execute(
+
+            "INSERT INTO songs VALUES(?,?,?,?)", (songID, title, artist, genre)
+
+        )
+
+        songConn.commit()
+
+        songConn.close()
+
+        return redirect(
+
+            url_for("songs")
+
+        )  # redirect back to the songs page after adding a song
 
     return render_template("addsongs.html", title="Add Songs")
 

@@ -1,5 +1,44 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1> This is songs page</h1>
+<h1 class="text-lg-center">Songs</h1>
+
+<table class="table table-hover border-2 table-striped">
+
+    <thead>
+        <th scope="col">SongID</th>
+        <th scope="col">Title</th>
+        <th scope="col">Artist</th>
+        <th scope="col">Genre</th>
+    </thead>
+    <tbody>
+        {% for row in songsInDB %}
+        <tr>
+            <td>{{row["SongID"]}}</td>
+            <td>{{row["Title"]}}</td>
+            <td>{{row["Artist"]}}</td>
+            <td>{{row["Genre"]}}</td>
+
+            <td style="display:flex">
+
+                <button type="button" class="btn btn-outline-primary btn-sm">
+
+                    <a class="text-decoration-none" href="{{url_for('update', songID=row['songID'])}}">Update</a>
+
+                </button>
+
+
+
+                <form action="{{url_for('delete', songID=row['songID'])}}" method="POST">
+
+                    <input style="width:25px; margin-left:5px;padding:0; border-radius:50%" type="submit" value="X"
+                        onclick="confirm('Do you want to Delete this songs?')" class="btn btn-danger btn-sm" />
+
+                </form>
+
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock content %}
